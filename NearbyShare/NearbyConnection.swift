@@ -126,14 +126,14 @@ class NearbyConnection{
 	}
 	
 	private func receiveFrameAsync(length:UInt32){
-		receiveFrameChunkAsync(remaining: Int(length), accumulated: Data(capacity: Int(length)))
+		receiveFrameChunkAsync(remaining: Int(length), accumulated: NSMutableData(capacity: Int(length)) ?? NSMutableData())
 	}
 
 	// File payloads arrive in 512 KB frames, and asking for one of those in a single receive
 	// hands back damaged bytes, so reassemble the frame from bounded reads instead.
-	private func receiveFrameChunkAsync(remaining:Int, accumulated:Data){
+	private func receiveFrameChunkAsync(remaining:Int, accumulated:NSMutableData){
 		if remaining<=0{
-			processReceivedFrame(frameData: accumulated)
+			processReceivedFrame(frameData: accumulated as Data)
 			receiveFrameAsync()
 			return
 		}
@@ -149,9 +149,8 @@ class NearbyConnection{
 				self.protocolError()
 				return
 			}
-			var next=accumulated
-			next.append(content)
-			self.receiveFrameChunkAsync(remaining: remaining-content.count, accumulated: next)
+			accumulated.append(content)
+			self.receiveFrameChunkAsync(remaining: remaining-content.count, accumulated: accumulated)
 		}
 	}
 	
